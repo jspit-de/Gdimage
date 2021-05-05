@@ -379,9 +379,9 @@ class Gdimage {
   * @param int $color
   */
   public static function colorToArray($color){
-    $rgba['red'] = $color & 0xff;
+    $rgba['red'] = $color  >> 16 & 0xff;
     $rgba['green'] = $color >> 8 & 0xff;
-    $rgba['blue'] = $color  >> 16 & 0xff;
+    $rgba['blue'] = $color & 0xff;
     $rgba['alpha'] = $color >> 24 & 0xff;
     return $rgba;
   }
@@ -492,25 +492,40 @@ class Gdimage {
 
  /* 
   * rgb to hsv
+  * @param $r array(r,g,b,[alfa])or
   * @param int $r 0-255 red
   * @param int $g 0-255 green
   * @param int $b 0-255 blue
+  * @return array(hue,saturation,value)
   */
-  public static function rgb2hsv($r, $g, $b){
+  public static function rgb2hsv($r, $g = null, $b = null){
+    if(is_array($r)){
+      $arr = array_values($r);
+      if(count($arr) < 3) {
+        throw new InvalidArgumentException('Error parameter rgb2hsv');
+      }
+      list($r,$g,$b) = $arr;
+    }
     $r /= 255;
     $g /= 255;
     $b /= 255;
-    $maxRGB = max($r, $r, $b);
-    $minRGB = min($r, $r, $b);
+    $maxRGB = max($r, $g, $b);
+    $minRGB = min($r, $g, $b);
+    if($maxRGB > 1 OR $minRGB < 0){
+      throw new InvalidArgumentException('Error parameter rgb2hsv');
+    }
     $chroma = $maxRGB - $minRGB;
     $computedV = 100 * $maxRGB;
-    if($chroma == 0) return [0,0,$computedV];
+    if($chroma == 0) return [null,null,$computedV];
     $computedS = 100 * ($chroma / $maxRGB);
     if($r == $minRGB) $h = 3 - (($g - $b) / $chroma);
     elseif ($b == $minRGB) $h = 1 - (($r - $g) / $chroma);
     else $h = 5 - (($b - $r) / $chroma);
-    return [60 * $h, $computedS, $computedV];
+    return [
+      (float)(60 * $h), 
+      (float)$computedS,
+      (float)$computedV
+    ];
   }
-
 
 }
